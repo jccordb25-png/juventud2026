@@ -1,2 +1,748 @@
-# juventud2026
-jejejeje
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juventud2026 - Math Racer</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; transition: 0.5s; min-height: 100vh; padding: 15px; background: linear-gradient(135deg, #e8f0fe, #d4e4f7); color: #1a2a3a; }
+        .modo-oscuro { background: linear-gradient(135deg, #0f1a2b, #1a2a3a); color: #ecf0f1; }
+        .modo-oscuro .container { background: rgba(20,40,60,0.9); box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+        .container { max-width: 900px; margin: auto; padding: 20px; border-radius: 30px; background: rgba(255,255,255,0.92); box-shadow: 0 10px 40px rgba(0,0,0,0.12); transition: 0.5s; }
+
+        .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
+        h1 { font-size: 2.2em; background: linear-gradient(45deg, #f1c40f, #e67e22); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .header-botones { display: flex; gap: 8px; flex-wrap: wrap; }
+        .header-botones button { padding: 8px 15px; border: none; border-radius: 20px; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 0.9em; background: #6c5ce7; color: white; }
+        .header-botones button:hover { transform: scale(1.05); }
+
+        .niveles { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 15px 0; }
+        .niveles button { padding: 8px 14px; border: none; border-radius: 20px; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 0.85em; background: #3498db; color: white; }
+        .niveles button:hover { transform: scale(1.08); }
+        .niveles button.activo { box-shadow: 0 0 20px rgba(241,196,15,0.6); border: 2px solid #f1c40f; }
+
+        .estado { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px,1fr)); gap: 8px; background: rgba(0,0,0,0.06); padding: 12px; border-radius: 15px; margin: 10px 0; }
+        .estado-item { text-align: center; font-weight: bold; font-size: 0.9em; }
+        .estado-item span { display: block; font-size: 1.5em; }
+
+        .tablero { display: flex; justify-content: center; gap: 4px; margin: 20px 0; flex-wrap: wrap; }
+        .casilla { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; transition: 0.3s; border: 2px solid #b2bec3; background: #dfe6e9; color: #2d3436; position: relative; }
+        .modo-oscuro .casilla { background: #2d3e50; border-color: #3d566e; color: #dfe6e9; }
+        .casilla.meta { background: #f1c40f !important; border-color: #f39c12; color: #1a2a3a; }
+        .casilla.jugador { background: #00b894 !important; border-color: #00a381; box-shadow: 0 0 20px rgba(0,184,148,0.5); }
+        .casilla.cpu { background: #e17055 !important; border-color: #d63031; box-shadow: 0 0 20px rgba(225,112,85,0.5); }
+        .casilla.jugador-cpu { background: linear-gradient(45deg, #00b894, #e17055) !important; color: white; }
+        .casilla.powerup { animation: pulse 0.8s infinite; border-color: #a29bfe; }
+        @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+
+        .pregunta-box { padding: 20px; border-radius: 20px; margin: 15px 0; text-align: center; background: rgba(0,0,0,0.04); }
+        .modo-oscuro .pregunta-box { background: rgba(255,255,255,0.05); }
+        #preguntaTexto { font-size: 1.8em; font-weight: bold; margin: 10px 0; }
+        .opciones { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-width: 500px; margin: auto; }
+        .opciones button { padding: 16px; border: none; border-radius: 15px; font-size: 1.3em; font-weight: bold; cursor: pointer; transition: 0.2s; background: #dfe6e9; color: #2d3436; }
+        .modo-oscuro .opciones button { background: #2d3e50; color: #ecf0f1; }
+        .opciones button:hover:not(:disabled) { transform: scale(1.03); background: #b2bec3; }
+        .modo-oscuro .opciones button:hover:not(:disabled) { background: #3d566e; }
+        .opciones button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .opciones button.correcto { background: #00b894 !important; color: white; }
+        .opciones button.incorrecto { background: #e17055 !important; color: white; }
+
+        #mensaje { font-size: 1.1em; padding: 12px; border-radius: 15px; margin: 12px 0; min-height: 50px; background: rgba(0,0,0,0.04); }
+        .modo-oscuro #mensaje { background: rgba(255,255,255,0.05); }
+
+        .resultado-final { text-align: center; margin: 10px 0; }
+        .medalla { font-size: 2.5em; }
+        .stats { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin: 10px 0; font-size: 0.9em; }
+        .stats span { background: rgba(0,0,0,0.06); padding: 4px 14px; border-radius: 20px; }
+        .modo-oscuro .stats span { background: rgba(255,255,255,0.06); }
+
+        .btn-reiniciar { padding: 12px 35px; border: none; border-radius: 30px; font-weight: bold; font-size: 1em; cursor: pointer; transition: 0.3s; margin: 5px; background: #e67e22; color: white; }
+        .btn-reiniciar:hover { transform: scale(1.05); }
+        .btn-secundario { background: #6c5ce7; color: white; padding: 12px 25px; border: none; border-radius: 30px; font-weight: bold; cursor: pointer; transition: 0.3s; margin: 5px; }
+        .btn-secundario:hover { transform: scale(1.05); }
+        .btn-habilidad { background: #f39c12; color: white; padding: 12px 25px; border: none; border-radius: 30px; font-weight: bold; cursor: pointer; transition: 0.3s; margin: 5px; }
+        .btn-habilidad:hover:not(:disabled) { transform: scale(1.05); }
+        .btn-habilidad:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* Ocultar el progreso de preguntas (texto eliminado) */
+        .progreso-preguntas { display: none; }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 1.6em; }
+            .opciones { grid-template-columns: 1fr; }
+            .casilla { width: 34px; height: 34px; font-size: 10px; }
+            .estado { grid-template-columns: 1fr 1fr; }
+            #preguntaTexto { font-size: 1.3em; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🏁 Juventud2026</h1>
+        <div class="header-botones">
+            <button onclick="toggleModo()">🌓 Modo</button>
+        </div>
+    </div>
+
+    <div class="niveles" id="nivelesContainer"></div>
+
+    <div class="estado">
+        <div class="estado-item">🏃 Tú <span id="posJugadorDisplay">0</span></div>
+        <div class="estado-item">💻 CPU <span id="posCPUDisplay">0</span></div>
+        <div class="estado-item">🔥 Racha <span id="rachaDisplay">0</span></div>
+        <div class="estado-item">⚡ Power <span id="powerupDisplay">❌</span></div>
+        <div class="estado-item">⏱️ Tiempo <span id="tiempoDisplay">0s</span></div>
+    </div>
+
+    <div class="tablero" id="tablero"></div>
+
+    <!-- Elemento oculto: ya no se muestra "Pregunta X de 10" -->
+    <div class="progreso-preguntas" id="progresoPreguntas"></div>
+
+    <div class="pregunta-box">
+        <div id="preguntaTexto">🎯 Elige un nivel para jugar</div>
+        <div class="opciones" id="opciones"></div>
+    </div>
+
+    <div id="mensaje">👋 ¡Todos los niveles disponibles! Elige el que quieras.</div>
+
+    <div class="resultado-final">
+        <div class="medalla" id="medallaFinal"></div>
+        <div class="stats" id="statsFinal"></div>
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;">
+        <button class="btn-habilidad" id="btnHabilidad" onclick="usarHabilidad()" disabled>⚡ Usar habilidad</button>
+        <button class="btn-reiniciar" onclick="reiniciarJuego()">🔄 Reiniciar nivel</button>
+        <button class="btn-secundario" onclick="mostrarAyuda()">Ayuda</button>
+        <button class="btn-secundario" onclick="mostrarCreditos()">📝 Créditos</button>
+    </div>
+</div>
+
+<script>
+    // ============================================================
+    // ==================== CONFIGURACIÓN ===========================
+    // ============================================================
+    const META = 10;
+    const TOTAL_PREGUNTAS = 10;
+    const NOMBRES_NIVELES = [
+        '1° Primaria', '2° Primaria', '3° Primaria', 
+        '4° Primaria', '5° Primaria', '6° Primaria',
+        '1° Básico', '2° Básico', '3° Básico', 
+        '4° Bachillerato', '5° Bachillerato'
+    ];
+    const avatar = '🏃';
+
+    // ============================================================
+    // ==================== PREGUNTAS FIJAS POR NIVEL ==============
+    // ============================================================
+    const PREGUNTAS_POR_NIVEL = {
+        1: [
+            { texto: '3 + 2 = ?', respuesta: 5, opciones: [3, 4, 5, 6] },
+            { texto: '4 + 5 = ?', respuesta: 9, opciones: [7, 8, 9, 10] },
+            { texto: '7 + 1 = ?', respuesta: 8, opciones: [6, 7, 8, 9] },
+            { texto: '2 + 6 = ?', respuesta: 8, opciones: [6, 7, 8, 9] },
+            { texto: '8 + 2 = ?', respuesta: 10, opciones: [8, 9, 10, 11] },
+            { texto: '5 + 3 = ?', respuesta: 8, opciones: [6, 7, 8, 9] },
+            { texto: '9 + 0 = ?', respuesta: 9, opciones: [7, 8, 9, 10] },
+            { texto: '4 + 4 = ?', respuesta: 8, opciones: [6, 7, 8, 9] },
+            { texto: '6 + 3 = ?', respuesta: 9, opciones: [7, 8, 9, 10] },
+            { texto: '1 + 9 = ?', respuesta: 10, opciones: [8, 9, 10, 11] }
+        ],
+        2: [
+            { texto: '15 + 7 = ?', respuesta: 22, opciones: [20, 21, 22, 23] },
+            { texto: '23 + 5 = ?', respuesta: 28, opciones: [26, 27, 28, 29] },
+            { texto: '18 + 9 = ?', respuesta: 27, opciones: [25, 26, 27, 28] },
+            { texto: '34 - 12 = ?', respuesta: 22, opciones: [20, 21, 22, 23] },
+            { texto: '45 - 8 = ?', respuesta: 37, opciones: [35, 36, 37, 38] },
+            { texto: '27 - 14 = ?', respuesta: 13, opciones: [11, 12, 13, 14] },
+            { texto: '36 + 14 = ?', respuesta: 50, opciones: [48, 49, 50, 51] },
+            { texto: '52 - 27 = ?', respuesta: 25, opciones: [23, 24, 25, 26] },
+            { texto: '41 + 19 = ?', respuesta: 60, opciones: [58, 59, 60, 61] },
+            { texto: '63 - 35 = ?', respuesta: 28, opciones: [26, 27, 28, 29] }
+        ],
+        3: [
+            { texto: '25 + 18 = ?', respuesta: 43, opciones: [41, 42, 43, 44] },
+            { texto: '47 - 23 = ?', respuesta: 24, opciones: [22, 23, 24, 25] },
+            { texto: '3 × 4 = ?', respuesta: 12, opciones: [10, 11, 12, 13] },
+            { texto: '56 + 34 = ?', respuesta: 90, opciones: [88, 89, 90, 91] },
+            { texto: '72 - 48 = ?', respuesta: 24, opciones: [22, 23, 24, 25] },
+            { texto: '5 × 3 = ?', respuesta: 15, opciones: [13, 14, 15, 16] },
+            { texto: '83 + 17 = ?', respuesta: 100, opciones: [98, 99, 100, 101] },
+            { texto: '91 - 66 = ?', respuesta: 25, opciones: [23, 24, 25, 26] },
+            { texto: '6 × 4 = ?', respuesta: 24, opciones: [22, 23, 24, 25] },
+            { texto: '7 × 5 = ?', respuesta: 35, opciones: [33, 34, 35, 36] }
+        ],
+        4: [
+            { texto: '6 × 7 = ?', respuesta: 42, opciones: [40, 41, 42, 43] },
+            { texto: '8 × 5 = ?', respuesta: 40, opciones: [38, 39, 40, 41] },
+            { texto: '72 ÷ 8 = ?', respuesta: 9, opciones: [7, 8, 9, 10] },
+            { texto: '56 ÷ 7 = ?', respuesta: 8, opciones: [6, 7, 8, 9] },
+            { texto: '43 + 28 = ?', respuesta: 71, opciones: [69, 70, 71, 72] },
+            { texto: '9 × 6 = ?', respuesta: 54, opciones: [52, 53, 54, 55] },
+            { texto: '81 ÷ 9 = ?', respuesta: 9, opciones: [7, 8, 9, 10] },
+            { texto: '64 ÷ 8 = ?', respuesta: 8, opciones: [6, 7, 8, 9] },
+            { texto: '57 + 36 = ?', respuesta: 93, opciones: [91, 92, 93, 94] },
+            { texto: '7 × 9 = ?', respuesta: 63, opciones: [61, 62, 63, 64] }
+        ],
+        5: [
+            { texto: '12 × 9 = ?', respuesta: 108, opciones: [106, 107, 108, 109] },
+            { texto: '15 × 7 = ?', respuesta: 105, opciones: [103, 104, 105, 106] },
+            { texto: '144 ÷ 12 = ?', respuesta: 12, opciones: [10, 11, 12, 13] },
+            { texto: '108 ÷ 9 = ?', respuesta: 12, opciones: [10, 11, 12, 13] },
+            { texto: 'Área de cuadrado de lado 5 = ?', respuesta: 25, opciones: [23, 24, 25, 26] },
+            { texto: '18 × 6 = ?', respuesta: 108, opciones: [106, 107, 108, 109] },
+            { texto: '216 ÷ 18 = ?', respuesta: 12, opciones: [10, 11, 12, 13] },
+            { texto: 'Área de cuadrado de lado 8 = ?', respuesta: 64, opciones: [62, 63, 64, 65] },
+            { texto: '14 × 11 = ?', respuesta: 154, opciones: [152, 153, 154, 155] },
+            { texto: 'Área de cuadrado de lado 7 = ?', respuesta: 49, opciones: [47, 48, 49, 50] }
+        ],
+        6: [
+            // Fracciones (5 problemas)
+            { texto: '2/5 + ?/5 = 1', respuesta: 3, opciones: [1, 2, 3, 4] },
+            { texto: '3/7 + ?/7 = 1', respuesta: 4, opciones: [2, 3, 4, 5] },
+            { texto: '4/9 + ?/9 = 1', respuesta: 5, opciones: [3, 4, 5, 6] },
+            { texto: '?/6 + 1/6 = 1', respuesta: 5, opciones: [2, 3, 4, 5] },
+            { texto: '?/8 + 3/8 = 1', respuesta: 5, opciones: [3, 4, 5, 6] },
+            // Porcentajes (5 problemas)
+            { texto: '20% de 80 = ?', respuesta: 16, opciones: [14, 15, 16, 17] },
+            { texto: '35% de 60 = ?', respuesta: 21, opciones: [19, 20, 21, 22] },
+            { texto: '45% de 120 = ?', respuesta: 54, opciones: [52, 53, 54, 55] },
+            { texto: '25% de 200 = ?', respuesta: 50, opciones: [48, 49, 50, 51] },
+            { texto: '60% de 150 = ?', respuesta: 90, opciones: [88, 89, 90, 91] }
+        ],
+        7: [
+            { texto: '2x + 3 = 11 → x = ?', respuesta: 4, opciones: [2, 3, 4, 5] },
+            { texto: 'x/3 + 5 = 8 → x = ?', respuesta: 9, opciones: [6, 7, 8, 9] },
+            { texto: '3(x - 2) = 9 → x = ?', respuesta: 5, opciones: [3, 4, 5, 6] },
+            { texto: '4x - 5 = 15 → x = ?', respuesta: 5, opciones: [3, 4, 5, 6] },
+            { texto: '30% de 150 = ?', respuesta: 45, opciones: [43, 44, 45, 46] },
+            { texto: 'x/2 + 7 = 12 → x = ?', respuesta: 10, opciones: [8, 9, 10, 11] },
+            { texto: '5x + 2 = 27 → x = ?', respuesta: 5, opciones: [3, 4, 5, 6] },
+            { texto: '2(x + 3) = 14 → x = ?', respuesta: 4, opciones: [2, 3, 4, 5] },
+            { texto: '45% de 200 = ?', respuesta: 90, opciones: [88, 89, 90, 91] },
+            { texto: '3x - 4 = 14 → x = ?', respuesta: 6, opciones: [4, 5, 6, 7] }
+        ],
+        8: [
+            { texto: '2^3 = ?', respuesta: 8, opciones: [6, 7, 8, 9] },
+            { texto: '2^5 = ?', respuesta: 32, opciones: [30, 31, 32, 33] },
+            { texto: '(x - 3) = 7 → x = ?', respuesta: 10, opciones: [8, 9, 10, 11] },
+            { texto: '(x + 2) = 9 → x = ?', respuesta: 7, opciones: [5, 6, 7, 8] },
+            { texto: '√36 = ?', respuesta: 6, opciones: [4, 5, 6, 7] },
+            { texto: '2^4 = ?', respuesta: 16, opciones: [14, 15, 16, 17] },
+            { texto: '(x - 5) = 8 → x = ?', respuesta: 13, opciones: [11, 12, 13, 14] },
+            { texto: '√81 = ?', respuesta: 9, opciones: [7, 8, 9, 10] },
+            { texto: '2^6 = ?', respuesta: 64, opciones: [62, 63, 64, 65] },
+            { texto: '√49 = ?', respuesta: 7, opciones: [5, 6, 7, 8] }
+        ],
+        9: [
+            { texto: '√121 = ?', respuesta: 11, opciones: [9, 10, 11, 12] },
+            { texto: '2x + 5 = 15 → x = ?', respuesta: 5, opciones: [3, 4, 5, 6] },
+            { texto: 'f(2) si f(x) = 2x + 3', respuesta: 7, opciones: [5, 6, 7, 8] },
+            { texto: '√144 = ?', respuesta: 12, opciones: [10, 11, 12, 13] },
+            { texto: '3x - 2 = 13 → x = ?', respuesta: 5, opciones: [3, 4, 5, 6] },
+            { texto: 'f(4) si f(x) = 2x + 3', respuesta: 11, opciones: [9, 10, 11, 12] },
+            { texto: '√169 = ?', respuesta: 13, opciones: [11, 12, 13, 14] },
+            { texto: '4x + 3 = 23 → x = ?', respuesta: 5, opciones: [3, 4, 5, 6] },
+            { texto: 'f(5) si f(x) = 2x + 3', respuesta: 13, opciones: [11, 12, 13, 14] },
+            { texto: '√225 = ?', respuesta: 15, opciones: [13, 14, 15, 16] }
+        ],
+        10: [
+            { texto: 'sen(0°) = ?', respuesta: 0, opciones: [0, 0.5, 0.707, 1] },
+            { texto: 'sen(30°) = ?', respuesta: 0.5, opciones: [0, 0.5, 0.707, 1] },
+            { texto: '2^2 = ?', respuesta: 4, opciones: [2, 3, 4, 5] },
+            { texto: '2^3 = ?', respuesta: 8, opciones: [6, 7, 8, 9] },
+            { texto: 'log₂(4) = ?', respuesta: 2, opciones: [1, 2, 3, 4] },
+            { texto: 'log₃(9) = ?', respuesta: 2, opciones: [1, 2, 3, 4] },
+            { texto: 'sen(45°) = ?', respuesta: 0.707, opciones: [0, 0.5, 0.707, 1] },
+            { texto: '2^4 = ?', respuesta: 16, opciones: [14, 15, 16, 17] },
+            { texto: 'log₂(8) = ?', respuesta: 3, opciones: [1, 2, 3, 4] },
+            { texto: 'sen(60°) = ?', respuesta: 0.866, opciones: [0, 0.5, 0.707, 0.866] }
+        ],
+        11: [
+            // Límites (3)
+            { texto: 'lim_{x→2} (x² - 4)/(x - 2) = ?', respuesta: 4, opciones: [2, 3, 4, 5] },
+            { texto: 'lim_{x→1} (x³ - 1)/(x - 1) = ?', respuesta: 3, opciones: [1, 2, 3, 4] },
+            { texto: 'lim_{x→0} (sen x)/x = ?', respuesta: 1, opciones: [0, 1, 2, 3] },
+            // Derivadas evaluadas en un punto (3)
+            { texto: "d/dx (x³) en x = 2", respuesta: 12, opciones: [8, 10, 12, 14] },
+            { texto: "d/dx (3x²) en x = 1", respuesta: 6, opciones: [3, 4, 5, 6] },
+            { texto: "d/dx (x⁴) en x = 1", respuesta: 4, opciones: [2, 3, 4, 5] },
+            // Integrales definidas (2)
+            { texto: '∫₀¹ 2x dx = ?', respuesta: 1, opciones: [0, 1, 2, 3] },
+            { texto: '∫₀² 2x dx = ?', respuesta: 4, opciones: [2, 3, 4, 5] },
+            // Combinatoria (2)
+            { texto: '5! = ?', respuesta: 120, opciones: [100, 110, 120, 130] },
+            { texto: 'C(5,2) = ?', respuesta: 10, opciones: [7, 8, 9, 10] }
+        ]
+    };
+
+    // ============================================================
+    // ==================== ESTADO DEL JUEGO =======================
+    // ============================================================
+    let nivelActual = 1;
+    let posJugador = 0, posCPU = 0;
+    let turno = 'jugador';
+    let juegoTerminado = false;
+    let racha = 0;
+    let powerup = null;
+    let cpuCongelado = false;
+    let errores = 0;
+    let aciertos = 0;
+    let segundos = 0;
+    let tiempoInterval = null;
+    let tiempoInicio = null;
+
+    let preguntasNivel = [];
+    let indicePreguntaActual = 0;
+    let statsNiveles = {};
+
+    // ============================================================
+    // ==================== GUARDAR / CARGAR =======================
+    // ============================================================
+    function guardarDatos() {
+        try {
+            localStorage.setItem('mathRacerFree', JSON.stringify({ statsNiveles }));
+        } catch (e) {}
+    }
+
+    function cargarDatos() {
+        try {
+            const data = JSON.parse(localStorage.getItem('mathRacerFree'));
+            if (data) statsNiveles = data.statsNiveles || {};
+        } catch (e) {}
+    }
+    cargarDatos();
+
+    // ============================================================
+    // ==================== SONIDOS ================================
+    // ============================================================
+    function playSound(tipo) {
+        try {
+            const ctx = new(window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            gain.gain.value = 0.12;
+            if (tipo === 'correcto') {
+                osc.frequency.value = 523;
+                osc.type = 'sine';
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.12);
+                setTimeout(() => {
+                    const o2 = ctx.createOscillator();
+                    const g2 = ctx.createGain();
+                    o2.connect(g2);
+                    g2.connect(ctx.destination);
+                    g2.gain.value = 0.1;
+                    o2.frequency.value = 659;
+                    o2.type = 'sine';
+                    o2.start(ctx.currentTime + 0.12);
+                    o2.stop(ctx.currentTime + 0.25);
+                }, 120);
+            } else if (tipo === 'error') {
+                osc.frequency.value = 200;
+                osc.type = 'sawtooth';
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.3);
+            } else if (tipo === 'win') {
+                [523, 587, 659, 784].forEach((f, i) => {
+                    setTimeout(() => {
+                        const o = ctx.createOscillator();
+                        const g = ctx.createGain();
+                        o.connect(g);
+                        g.connect(ctx.destination);
+                        g.gain.value = 0.1;
+                        o.frequency.value = f;
+                        o.type = 'sine';
+                        o.start(ctx.currentTime);
+                        o.stop(ctx.currentTime + 0.15);
+                    }, i * 120);
+                });
+            } else if (tipo === 'lose') {
+                osc.frequency.value = 250;
+                osc.type = 'sawtooth';
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.5);
+            } else if (tipo === 'powerup') {
+                osc.frequency.value = 880;
+                osc.type = 'sine';
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.08);
+                setTimeout(() => {
+                    const o2 = ctx.createOscillator();
+                    const g2 = ctx.createGain();
+                    o2.connect(g2);
+                    g2.connect(ctx.destination);
+                    g2.gain.value = 0.1;
+                    o2.frequency.value = 1100;
+                    o2.type = 'sine';
+                    o2.start(ctx.currentTime);
+                    o2.stop(ctx.currentTime + 0.12);
+                }, 80);
+            }
+        } catch (e) {}
+    }
+
+    // ============================================================
+    // ==================== FUNCIONES DEL JUEGO ====================
+    // ============================================================
+    function cargarPreguntasNivel(nivel) {
+        const preg = PREGUNTAS_POR_NIVEL[nivel] || PREGUNTAS_POR_NIVEL[1];
+        return preg.map(p => ({ ...p }));
+    }
+
+    function obtenerPreguntaActual() {
+        return preguntasNivel[indicePreguntaActual];
+    }
+
+    // Función para desordenar un array (Fisher-Yates)
+    function shuffleArray(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+    }
+
+    function dibujarTablero() {
+        const t = document.getElementById('tablero');
+        t.innerHTML = '';
+        for (let i = 0; i <= META; i++) {
+            const c = document.createElement('div');
+            c.className = 'casilla';
+            if (i === META) c.classList.add('meta');
+
+            if (i === posJugador && i === posCPU) {
+                c.classList.add('jugador-cpu');
+                c.textContent = `${avatar}💻`;
+            } else {
+                if (i === posJugador) {
+                    c.classList.add('jugador');
+                    c.textContent = avatar;
+                }
+                if (i === posCPU) {
+                    c.classList.add('cpu');
+                    c.textContent = '💻';
+                }
+                if (i === posJugador && powerup === 'doble') c.classList.add('powerup');
+                if (i !== posJugador && i !== posCPU && i !== META) c.textContent = i;
+                if (i === META && i !== posJugador && i !== posCPU) c.textContent = '🏁';
+            }
+            t.appendChild(c);
+        }
+        document.getElementById('posJugadorDisplay').textContent = posJugador;
+        document.getElementById('posCPUDisplay').textContent = posCPU;
+        document.getElementById('rachaDisplay').textContent = racha;
+        const icons = { 'doble': '🚀', 'congelar': '⏳', 'extra': '⭐', 'cambio': '🎲' };
+        document.getElementById('powerupDisplay').textContent = powerup ? (icons[powerup] || '⚡') : '❌';
+        document.getElementById('btnHabilidad').disabled = !powerup;
+    }
+
+    function iniciarCronometro() {
+        if (tiempoInterval) return;
+        tiempoInicio = Date.now();
+        segundos = 0;
+        tiempoInterval = setInterval(() => {
+            segundos = Math.floor((Date.now() - tiempoInicio) / 1000);
+            document.getElementById('tiempoDisplay').textContent = segundos + 's';
+        }, 500);
+    }
+
+    function detenerCronometro() {
+        clearInterval(tiempoInterval);
+        tiempoInterval = null;
+    }
+
+    function reiniciarCronometro() {
+        detenerCronometro();
+        segundos = 0;
+        document.getElementById('tiempoDisplay').textContent = '0s';
+    }
+
+    // ============================================================
+    // ==================== USAR HABILIDAD =========================
+    // ============================================================
+    function usarHabilidad() {
+        if (!powerup || juegoTerminado) return;
+        const tipo = powerup;
+        powerup = null;
+
+        let mensaje = '';
+        switch (tipo) {
+            case 'doble':
+                posJugador = Math.min(posJugador + 2, META);
+                mensaje = '🚀 ¡Doble avance!';
+                break;
+            case 'extra':
+                posJugador = Math.min(posJugador + 3, META);
+                mensaje = '⭐ ¡+3 avance!';
+                break;
+            case 'congelar':
+                cpuCongelado = true;
+                mensaje = '⏳ CPU congelada por un turno.';
+                break;
+            case 'cambio':
+                if (indicePreguntaActual < TOTAL_PREGUNTAS - 1) {
+                    indicePreguntaActual++;
+                } else {
+                    indicePreguntaActual = 0;
+                }
+                mensaje = '🎲 Pregunta cambiada.';
+                dibujarTablero();
+                mostrarPregunta();
+                return;
+            default:
+                powerup = tipo;
+                return;
+        }
+        document.getElementById('mensaje').innerHTML = mensaje;
+        playSound('powerup');
+        dibujarTablero();
+        guardarDatos();
+
+        if (posJugador >= META) {
+            finalizarJuego(true);
+            return;
+        }
+        if (tipo !== 'congelar') {
+            turno = 'cpu';
+            setTimeout(turnoCPU, 700);
+        } else {
+            setTimeout(mostrarPregunta, 400);
+        }
+    }
+
+    // ============================================================
+    // ==================== MOSTRAR PREGUNTA =======================
+    // ============================================================
+    function mostrarPregunta() {
+        if (juegoTerminado) return;
+        if (indicePreguntaActual >= TOTAL_PREGUNTAS) {
+            indicePreguntaActual = 0;
+            preguntasNivel = cargarPreguntasNivel(nivelActual);
+        }
+
+        const p = obtenerPreguntaActual();
+        document.getElementById('preguntaTexto').innerHTML = p.texto;
+        const cont = document.getElementById('opciones');
+        cont.innerHTML = '';
+
+        // Desordenar las opciones para que la respuesta no esté siempre en la misma posición
+        const opcionesMezcladas = shuffleArray([...p.opciones]);
+
+        opcionesMezcladas.forEach(op => {
+            const btn = document.createElement('button');
+            btn.innerText = op;
+            btn.onclick = () => {
+                if (turno !== 'jugador' || juegoTerminado) return;
+                const correcto = op === p.respuesta;
+                document.querySelectorAll('.opciones button').forEach(b => {
+                    if (parseFloat(b.innerText) === parseFloat(p.respuesta)) b.classList.add('correcto');
+                    if (b === btn && !correcto) b.classList.add('incorrecto');
+                    b.disabled = true;
+                });
+                if (correcto) {
+                    aciertos++;
+                    racha++;
+                    let avance = 1;
+                    if (racha >= 5) avance = 2;
+                    posJugador = Math.min(posJugador + avance, META);
+                    document.getElementById('mensaje').innerHTML = `✅ ¡Correcto! Avanzas ${avance} 🎉`;
+                    playSound('correcto');
+                    if (aciertos % 4 === 0 && !powerup && !juegoTerminado) {
+                        const tipos = ['doble', 'congelar', 'extra', 'cambio'];
+                        powerup = tipos[Math.floor(Math.random() * tipos.length)];
+                        document.getElementById('mensaje').innerHTML += ` ⚡ ¡Has obtenido ${powerup}! Usa el botón de habilidad.`;
+                        playSound('powerup');
+                    }
+                } else {
+                    racha = 0;
+                    errores++;
+                    posJugador = Math.max(posJugador - 1, 0);
+                    document.getElementById('mensaje').innerHTML = '❌ Error, retrocedes.';
+                    playSound('error');
+                }
+                indicePreguntaActual++;
+                dibujarTablero();
+                guardarDatos();
+                if (posJugador >= META) { finalizarJuego(true); return; }
+                turno = 'cpu';
+                setTimeout(turnoCPU, 700);
+            };
+            cont.appendChild(btn);
+        });
+        if (!tiempoInterval) iniciarCronometro();
+    }
+
+    // ============================================================
+    // ==================== TURNO CPU ==============================
+    // ============================================================
+    function turnoCPU() {
+        if (juegoTerminado) return;
+        if (cpuCongelado) {
+            cpuCongelado = false;
+            document.getElementById('mensaje').innerHTML = '⏳ CPU congelada, tu turno.';
+            turno = 'jugador';
+            mostrarPregunta();
+            return;
+        }
+        const p = obtenerPreguntaActual();
+        const acierta = Math.random() < (0.5 + nivelActual * 0.035);
+        if (acierta) {
+            posCPU = Math.min(posCPU + 1, META);
+            document.getElementById('mensaje').innerHTML = '💻 CPU acertó.';
+        } else {
+            posCPU = Math.max(posCPU - 1, 0);
+            document.getElementById('mensaje').innerHTML = '💻 CPU falló.';
+        }
+        indicePreguntaActual++;
+        dibujarTablero();
+        if (posCPU >= META) { finalizarJuego(false); return; }
+        turno = 'jugador';
+        setTimeout(mostrarPregunta, 300);
+    }
+
+    // ============================================================
+    // ==================== FINALIZAR JUEGO ========================
+    // ============================================================
+    function finalizarJuego(gano) {
+        juegoTerminado = true;
+        detenerCronometro();
+        const medalla = document.getElementById('medallaFinal');
+        const stats = document.getElementById('statsFinal');
+        let emoji = '🥉';
+
+        if (!statsNiveles[nivelActual]) {
+            statsNiveles[nivelActual] = { partidas: 0, victorias: 0, mejorTiempo: Infinity, totalErrores: 0, totalAciertos: 0 };
+        }
+        const s = statsNiveles[nivelActual];
+        s.partidas++;
+        s.totalErrores += errores;
+        s.totalAciertos += aciertos;
+        if (segundos < s.mejorTiempo) s.mejorTiempo = segundos;
+
+        if (gano) {
+            s.victorias++;
+            if (errores <= 1) emoji = '🥇';
+            else if (errores <= 3) emoji = '🥈';
+            medalla.textContent = `🏆 ¡Ganaste! ${emoji}`;
+            playSound('win');
+            document.getElementById('mensaje').innerHTML = `🎉 ¡Victoria! Tiempo: ${segundos}s | Errores: ${errores}`;
+        } else {
+            medalla.textContent = '😵 Perdiste...';
+            playSound('lose');
+            document.getElementById('mensaje').innerHTML = `💻 La CPU ganó. Tiempo: ${segundos}s | Errores: ${errores}`;
+        }
+
+        guardarDatos();
+
+        stats.innerHTML = `
+                <span>✅ Aciertos: ${aciertos}</span>
+                <span>❌ Errores: ${errores}</span>
+                <span>⏱️ Tiempo: ${segundos}s</span>
+                <span>🔥 Racha: ${racha}</span>
+                <span>🏅 Mejor tiempo: ${s.mejorTiempo < Infinity ? s.mejorTiempo + 's' : '—'}</span>
+                <span>📊 Victorias: ${s.victorias}/${s.partidas}</span>
+            `;
+        dibujarTablero();
+        actualizarBotonesNiveles();
+        document.querySelectorAll('.opciones button').forEach(b => b.disabled = true);
+    }
+
+    // ============================================================
+    // ==================== REINICIAR ==============================
+    // ============================================================
+    function reiniciarJuego() {
+        posJugador = 0;
+        posCPU = 0;
+        turno = 'jugador';
+        juegoTerminado = false;
+        racha = 0;
+        powerup = null;
+        cpuCongelado = false;
+        errores = 0;
+        aciertos = 0;
+        indicePreguntaActual = 0;
+        preguntasNivel = cargarPreguntasNivel(nivelActual);
+        document.getElementById('medallaFinal').textContent = '';
+        document.getElementById('statsFinal').innerHTML = '';
+        document.getElementById('mensaje').innerHTML = `🔄 Reiniciado nivel ${nivelActual} - ${NOMBRES_NIVELES[nivelActual-1]}`;
+        reiniciarCronometro();
+        dibujarTablero();
+        mostrarPregunta();
+        actualizarBotonesNiveles();
+    }
+
+    // ============================================================
+    // ==================== INICIAR NIVEL ==========================
+    // ============================================================
+    function iniciarNivel(nivel) {
+        if (nivel === nivelActual) return;
+        nivelActual = nivel;
+        reiniciarJuego();
+        document.getElementById('mensaje').innerHTML = `🎯 Nivel ${nivel} - ${NOMBRES_NIVELES[nivel-1]}`;
+        actualizarBotonesNiveles();
+    }
+
+    // ============================================================
+    // ==================== BOTONES DE NIVEL =======================
+    // ============================================================
+    function actualizarBotonesNiveles() {
+        const cont = document.getElementById('nivelesContainer');
+        cont.innerHTML = '';
+        for (let i = 1; i <= 11; i++) {
+            const btn = document.createElement('button');
+            btn.textContent = NOMBRES_NIVELES[i-1];
+            if (i === nivelActual) btn.classList.add('activo');
+            btn.onclick = () => iniciarNivel(i);
+            cont.appendChild(btn);
+        }
+    }
+
+    // ============================================================
+    // ==================== FUNCIÓN CRÉDITOS =======================
+    // ============================================================
+    function mostrarCreditos() {
+        document.getElementById('mensaje').innerHTML = `
+                <b>👨‍💻 Creadores de Juventud2026</b><br><br>
+                • Juan Carlos Cor Toc<br>
+                • Cesar Augusto Barrientos Lopéz<br>
+                • Carlos Gerson Revolorio Chiche<br>
+                • Samuel Enrique Velásquez Navarro
+            `;
+    }
+
+    function toggleModo() {
+        document.body.classList.toggle('modo-oscuro');
+    }
+
+    function mostrarAyuda() {
+        document.getElementById('mensaje').innerHTML = `
+                🎮 <b>CÓMO JUGAR</b><br>
+                • Responde correctamente para avanzar 🏃<br>
+                • 5 aciertos seguidos = avance doble 🔥<br>
+                • Cada 4 aciertos = Power-up (guárdalo y úsalo con el botón ⚡)<br>
+                • 🚀 Doble avance | ⭐ +3 | ⏳ Congelar CPU | 🎲 Cambiar pregunta<br>
+                • Llega a la meta (casilla 10) antes que la CPU 🏁<br>
+                • 10 preguntas fijas por nivel según el pensum de Guatemala 📚<br>
+                • Todos los niveles están desbloqueados desde el inicio<br>
+                • 📚 Niveles: 1°-6° Primaria, 1°-3° Básico, 4°-5° Bachillerato
+            `;
+    }
+
+    // ============================================================
+    // ==================== INICIO =================================
+    // ============================================================
+    window.onload = function() {
+        actualizarBotonesNiveles();
+        nivelActual = 1;
+        preguntasNivel = cargarPreguntasNivel(1);
+        reiniciarJuego();
+    };
+</script>
+</body>
+</html>
